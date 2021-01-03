@@ -1,1 +1,1 @@
-# simple-2fa-app
+# SIMPLE 2FA APPLICATION
