@@ -1,4 +1,4 @@
-# client
+# SIMPLE 2FA CLIENT SIDE
 
 ## Project setup
 ```
