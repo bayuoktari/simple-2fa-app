@@ -120,25 +120,50 @@ class UserController {
       });
   }
   static verify2fa(req, res, next) {
-    User.findOne({ where: { id: req.loginData.id } }).then((user) => {
-      if (!user) {
-        throw {
-          errors: [
-            {
-              status: 404,
-              name: "Not Found",
-              message: "User Not Found",
-            },
-          ],
-        };
-      }
-      const tokenMatch = verifySecret(user.secret2fa.base32, req.body.token);
-      if (!tokenMatch) {
-        throw { msg: "Invalid Token" };
-      } else {
-        res.status(200).json({ message: "Token Valid" });
-      }
-    });
+    User.findOne({ where: { id: req.loginData.id } })
+      .then((user) => {
+        if (!user) {
+          throw {
+            errors: [
+              {
+                status: 404,
+                name: "Not Found",
+                message: "User Not Found",
+              },
+            ],
+          };
+        }
+        const tokenMatch = verifySecret(user.secret2fa.base32, req.body.token);
+        if (!tokenMatch) {
+          throw { msg: "Invalid Token" };
+        } else {
+          res.status(200).json({ message: "Token Valid" });
+        }
+      })
+      .catch((err) => {
+        next(err);
+      });
+  }
+  static getUserDetail(req, res, next) {
+    User.findOne({ where: { id: req.loginData.id } })
+      .then((user) => {
+        if (!user) {
+          throw {
+            errors: [
+              {
+                status: 404,
+                name: "Not Found",
+                message: "User Not Found",
+              },
+            ],
+          };
+        } else {
+          res.status(200).json(user);
+        }
+      })
+      .catch((err) => {
+        next(err);
+      });
   }
 }
 
