@@ -11,7 +11,7 @@ const generateSecret = () => {
 };
 
 const verifySecret = (secret, token) => {
-  // console.log(secret, token);
+  console.log(secret, token);
   return speakeasy.totp.verify({
     secret: secret,
     encoding: "base32",

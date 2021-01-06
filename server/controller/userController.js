@@ -58,6 +58,7 @@ class UserController {
             req.body.password,
             user.password
           );
+          // console.log(matchPassword, req.body.password);
           if (matchPassword) {
             const token = generateToken({
               id: user.id,
@@ -75,49 +76,68 @@ class UserController {
         next(err);
       });
   }
-  static config2FA(req, res, next) {
-    let status;
-    User.findOne({ where: { id: req.loginData.id } })
-      .then((user) => {
-        if (!user) {
-          throw {
-            errors: [
-              {
-                status: 404,
-                name: "Not Found",
-                message: "User Not Found",
-              },
-            ],
-          };
-        } else {
-          if (!user.enable2fa) {
-            status = "Enabled";
-            const secret = generateSecret();
-            return User.update(
-              {
-                enable2fa: 1,
-                secret2fa: secret,
-              },
-              { where: { id: req.loginData.id } }
-            );
-          } else {
-            status = "Disabled";
-            return User.update(
-              {
-                enable2fa: 0,
-                secret2fa: null,
-              },
-              { where: { id: req.loginData.id } }
-            );
-          }
-        }
-      })
+  static generate2FA(req, res, next) {
+    const secret = generateSecret();
+    res.status(201).json(secret);
+  }
+  static disable2fa(req, res, next) {
+    User.update(
+      {
+        enable2fa: 0,
+        secret2fa: null,
+      },
+      { where: { id: req.loginData.id } }
+    )
       .then(() => {
-        res.status(200).json({ message: `2FA Successfully ${status}` });
+        res.status(200).json({ message: `2FA Successfully Disabled` });
       })
       .catch((err) => {
         next(err);
       });
+  }
+  static enable2fa(req, res, next) {
+    const tokenMatch = verifySecret(req.body.secret, req.body.token);
+    // console.log(tokenMatch);
+    if (tokenMatch) {
+      User.findOne({ where: { id: req.loginData.id } })
+        .then((user) => {
+          if (!user) {
+            throw {
+              errors: [
+                {
+                  status: 404,
+                  name: "Not Found",
+                  message: "User Not Found",
+                },
+              ],
+            };
+          } else {
+            return User.update(
+              {
+                enable2fa: 1,
+                secret2fa: req.body.secret,
+              },
+              { where: { id: req.loginData.id } }
+            );
+          }
+        })
+        .then(() => {
+          res.status(200).json({ message: `2FA Successfully Enabled` });
+        })
+        .catch((err) => {
+          next(err);
+        });
+    } else {
+      next({
+        errors: [
+          {
+            status: 400,
+            name: "Invalid OTP Token",
+            message: "Invalid OTP TOKEN",
+          },
+        ],
+      });
+    }
   }
   static verify2fa(req, res, next) {
     User.findOne({ where: { id: req.loginData.id } })
@@ -133,9 +153,17 @@ class UserController {
             ],
           };
         }
-        const tokenMatch = verifySecret(user.secret2fa.base32, req.body.token);
+        const tokenMatch = verifySecret(user.secret2fa, req.body.token);
         if (!tokenMatch) {
-          throw { msg: "Invalid Token" };
+          throw {
+            errors: [
+              {
+                status: 400,
+                name: "Bad Request",
+                message: "Invalid Token",
+              },
+            ],
+          };
         } else {
           res.status(200).json({ message: "Token Valid" });
         }
