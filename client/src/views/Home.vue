@@ -79,24 +79,30 @@
 </template>
 
 <script>
-import { reactive, onBeforeMount } from "vue";
+import { reactive } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
+import swal from "sweetalert2";
 export default {
   name: "Home",
   setup() {
+    const Toast = swal.mixin({
+      toast: true,
+      position: "top",
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      didOpen: (toast) => {
+        toast.addEventListener("mouseenter", swal.stopTimer);
+        toast.addEventListener("mouseleave", swal.resumeTimer);
+      }
+    });
     const REST_API_SERVER = "http://localhost:3000/";
     const state = reactive({
       page: "Login",
       fullname: "",
       email: "",
       password: ""
-    });
-
-    onBeforeMount(() => {
-      // if (localStorage.getItem("access_token")) {
-      //   router.push("/dashboard");
-      // }
     });
 
     const router = useRouter();
@@ -119,9 +125,21 @@ export default {
         state.email = "";
         state.password = "";
         state.fullname = "";
-        router.push("/dashboard");
+        Toast.fire({
+          icon: "success",
+          title: "Login Success"
+        });
+        if (data["2fa"]) {
+          router.push("/verify");
+        } else {
+          router.push("/dashboard");
+        }
       } catch (err) {
-        console.log(err.response.data.message);
+        swal.fire({
+          icon: "error",
+          title: "Login Failed",
+          text: err.response.data.message
+        });
       }
     }
 
@@ -132,12 +150,20 @@ export default {
           email: state.email,
           password: state.password
         });
+
+        Toast.fire({
+          icon: "success",
+          title: "Successfully Registered"
+        });
         state.page = "Login";
       } catch (err) {
-        console.log(err.response.data.message);
+        swal.fire({
+          icon: "error",
+          title: "Login Failed",
+          text: err.response.data.message
+        });
       }
     }
-
     return { state, changePage, login, register };
   }
 };

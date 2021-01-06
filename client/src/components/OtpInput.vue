@@ -6,10 +6,10 @@
         <input
           id="partitioned"
           type="text"
-          maxlength="4"
+          maxlength="6"
           class="focus:outline-none bg-gray-100 font-bold text-xl text-green-400"
           autocomplete="off"
-          v-model="token"
+          v-model="state.userToken"
           @keypress="checkinput($event)"
         />
       </div>
@@ -17,15 +17,23 @@
   </div>
   <button
     class="block mx-auto px-4 py-2 bg-green-500 text-white hover:bg-green-700 rounded-md mt-3"
+    @click="submitOTP"
   >
     SUBMIT OTP
   </button>
 </template>
 
 <script>
+import { reactive } from "vue";
 export default {
   name: "OTPInput",
-  setup() {
+  emits: ["send"],
+  props: ["page"],
+  // eslint-disable-next-line no-unused-vars
+  setup(props, { emit }) {
+    const state = reactive({
+      userToken: ""
+    });
     function checkinput(e) {
       e = e ? e : window.event;
       var charCode = e.which ? e.which : e.keyCode;
@@ -39,7 +47,12 @@ export default {
         return true;
       }
     }
-    return { checkinput };
+
+    function submitOTP() {
+      emit("send", { token: state.userToken });
+    }
+
+    return { checkinput, state, submitOTP };
   }
 };
 </script>
@@ -58,8 +71,8 @@ export default {
   background-size: 50px 1px;
   background-repeat: repeat-x;
   background-position-x: 35px;
-  width: 250px;
-  min-width: 250px;
+  width: 350px;
+  min-width: 350px;
 }
 
 #divInner {
@@ -68,7 +81,7 @@ export default {
 }
 
 #divOuter {
-  width: 190px;
+  width: 290px;
   overflow: hidden;
 }
 </style>
